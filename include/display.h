@@ -10,10 +10,10 @@
 
 #include"fractal.h"
 
-#define WINDOW_WIDTH 1080
-#define WINDOW_HEIGHT 1080 
+#define WINDOW_WIDTH 720
+#define WINDOW_HEIGHT 720 
 
-#define MS_PER_FRAME 15
+#define MS_PER_FRAME 16
 
 #define BYTES_PER_PIXEL 4
 

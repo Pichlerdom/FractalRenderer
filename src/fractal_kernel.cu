@@ -35,9 +35,18 @@ __global__ void fractal_kernel(uint8_t *d_pixel_buffer,
 
   if(x_idx < w ||
      y_idx < h){
-    curr_pixel[0] = 255;
-    curr_pixel[1] = (uint8_t) (((double)curr_iteration/(double)max_iterations) * 255.0);
-    curr_pixel[2] = (uint8_t) (((double)curr_iteration/(double)max_iterations) * 255.0);;
-    curr_pixel[3] = (uint8_t) (((double)curr_iteration/(double)max_iterations) * 255.0);;
+    if(curr_iteration == max_iterations){
+      curr_pixel[0] = 255;
+      curr_pixel[1] = 0;
+      curr_pixel[2] = 0;
+      curr_pixel[3] = 0;
+    
+    }else{
+      curr_pixel[0] = 255;
+      curr_pixel[1] = 255 - (uint8_t) (((double)curr_iteration/(double)max_iterations) * 255.0);
+      curr_pixel[2] = 255 - (uint8_t) (((double)curr_iteration/(double)max_iterations) * 255.0);
+      curr_pixel[3] = 255 - (uint8_t) (((double)curr_iteration/(double)max_iterations) * 255.0);
+    
+    }
   }
 }
