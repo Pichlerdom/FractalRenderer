@@ -1,3 +1,6 @@
+
+.SUFFIXES : .cpp .cu
+
 TARGET_NAME = fractal_renderer
 
 #Directories
@@ -8,36 +11,43 @@ TARGET_DIR = ../bin
 #Compiler
 CC = g++
 
+#Cuda Compiler
+CUDA_CC = nvcc
+
 #C Flags
 CFLAGS = -Wall $(SDL2CFLAGS)
 
+#Cuda C Flags
+CUDA_CFLAGS = -lineinfo -maxrregcount=0 -gencode=arch=compute_50,code=\"sm_50,compute_50\"
+
 #define library names
-LIBS = -lSDL2 -lSDL2_ttf -lm -lpthread 
+LIBS = -lSDL2 -lSDL2_ttf -lm  -lcuda -lcudart -L/opt/cuda/lib
 
 #define library paths
 LFLAGS = -L"/usr/lib/x86_64-linux-gnu" 
 
 #define SDL2 Options
 SDL2CFLAGS = -D_REENRRANT
-SDL2INCLUDES = -I/usr/include/SDL2
+SDL2INCLUDES = -I/usr/include/SDL2 -I/opt/cuda/include
 
 _INCLUDES = $(wildcard $(IDIR)/*.h)
 INCLUDES = $(SDL2INCLUDES) -I$(IDIR)
 
 # define the C source files
-SRCS =  $(wildcard *.cpp)
+SRCS =  $(wildcard *.cpp) $(wildcard *.cu)
 
 #define object files
-OBJ = $(patsubst %.cpp, $(ODIR)/%.o, $(SRCS))
+OBJ =  $(filter %.o, $(patsubst %.cpp, $(ODIR)/%.o, $(SRCS)) $(patsubst %.cu, $(ODIR)/%.o, $(SRCS)) ) 
 
 MAIN = $(TARGET_DIR)/$(TARGET_NAME)
 
-.SUFFIXES : .cpp .o .cu
 
 debug: CFLAGS += -g
+debug: CUDA_CFLAGS += -g
 debug: $(MAIN) clean
 
 release: CFLAGS += -O2
+release: CUDA_CFLAGS += -O2
 release: $(MAIN) clean
 
 $(MAIN): $(OBJ)
@@ -45,6 +55,9 @@ $(MAIN): $(OBJ)
 
 $(ODIR)/%.o:%.cpp
 	$(CC) $(CFLAGS) $(INCLUDES) -c $< -o $@
+
+$(ODIR)/%.o:%.cu
+	$(CUDA_CC) $(CUDA_CFLAGS) $(INCLUDES) -c $< -o $@
 
 clean: $(MAIN)
 	rm $(OBJ)

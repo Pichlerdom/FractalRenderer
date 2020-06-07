@@ -8,6 +8,8 @@
 #include<string>
 #include<time.h>
 
+#include"fractal.h"
+
 #define WINDOW_WIDTH 1080
 #define WINDOW_HEIGHT 1080 
 
@@ -15,9 +17,16 @@
 
 #define BYTES_PER_PIXEL 4
 
-#define WINDOW_NAME "Planets"
+#define WINDOW_NAME "Fractal Generator"
 
-enum KEYS{W_KEY, A_KEY, S_KEY, D_KEY,R_KEY,F_KEY,V_KEY,Q_KEY};
+#define MOVEMENT_SPEED 10.0
+#define ZOOM_SPEED 1.01
+
+enum KEYS{W_KEY, A_KEY, S_KEY, D_KEY,
+	  R_KEY, F_KEY,
+	  V_KEY, Q_KEY,
+	  G_KEY, B_KEY,
+	  NUM_KEYS};
 
 typedef struct{
   SDL_Renderer* renderer;
@@ -29,8 +38,5 @@ typedef struct{
 }Display;
 
 void display_loop();
-
-
-
 
 #endif

@@ -75,6 +75,10 @@ bool handle_events(bool key_down[]){
 	    break;
 	  case SDLK_v: key_down[V_KEY] = true;
 	    break;
+	  case SDLK_b: key_down[G_KEY] = true;
+	    break;
+	  case SDLK_g: key_down[B_KEY] = true;
+	    break;
 	  case SDLK_q: key_down[Q_KEY] = true;
 	    return false;
 	    break;
@@ -98,6 +102,10 @@ bool handle_events(bool key_down[]){
 	    break;
 	  case SDLK_v: key_down[V_KEY] = false;
 	    break;
+	  case SDLK_b: key_down[G_KEY] = false;
+	    break;
+	  case SDLK_g: key_down[B_KEY] = false;
+	    break;
 	  case SDLK_q: key_down[Q_KEY] = false;
 	    break;
 	  }
@@ -111,7 +119,7 @@ bool handle_events(bool key_down[]){
 
 
 void display_loop(){
-  bool key_down[8];
+  bool key_down[NUM_KEYS];
   for(int i = 0 ;i < 8; i ++){
     key_down[i] = false;
   }
@@ -126,51 +134,98 @@ void display_loop(){
 
   bool run = true;
 
+
+  CudaFractalGenerator* frac_gen = new CudaFractalGenerator(WINDOW_WIDTH,
+							    WINDOW_HEIGHT,
+							    BYTES_PER_PIXEL);
+  double world_x = 0.0;
+  double world_y = 0.0;
+  double scale = 1.0;
+  uint32_t iterations = 256;
+  bool changed = true;
+
   
   while(run){
     currTime = SDL_GetTicks();
 
+    
     run = handle_events(key_down);
-    
-    uint32_t format;
-    int32_t w,h;
-    int32_t pitch;
-    uint8_t *curr_pixel;
-    
-    SDL_QueryTexture(display->texture, &format, NULL, &w , &h);
-    SDL_LockTexture(display->texture, NULL, (void **) &pixels_screen, &pitch);
 
+    if(key_down[R_KEY]){
+      scale = 1.0;
+      world_x = 0.0;
+      world_y = 0.0;
+      changed = true;
+    }
     
-    for(int x = 0; x < WINDOW_WIDTH; x++){
-      for(int y = 0; y < WINDOW_HEIGHT; y++){
-	curr_pixel = pixels_screen + (y * pitch) + x * BYTES_PER_PIXEL;
-	curr_pixel[0] = (uint8_t) (x/WINDOW_WIDTH) * 255;
-	curr_pixel[1] = (uint8_t) (y/WINDOW_HEIGHT) * 255;
-	curr_pixel[2] = (uint8_t) ((x * y)/(WINDOW_WIDTH * WINDOW_HEIGHT)) * 255;
-	curr_pixel[3] = 255; 
-      }
+    if(key_down[W_KEY]){
+      world_y -= scale * MOVEMENT_SPEED;
+      changed = true;
+    }else if(key_down[S_KEY]){
+      world_y += scale * MOVEMENT_SPEED;
+      changed = true;
     }
 
-    //draw here
+    if(key_down[A_KEY]){
+      world_x -= scale * MOVEMENT_SPEED;
+      changed = true;
+    }else if(key_down[D_KEY]){
+      world_x += scale * MOVEMENT_SPEED;
+      changed = true;
+    }
+
+    if(key_down[F_KEY]){
+      scale /= ZOOM_SPEED;
+      changed = true; 
+    }else if(key_down[V_KEY]){
+      scale *= ZOOM_SPEED;
+      changed = true;
+    }
+
+    if(key_down[G_KEY]){
+        if(iterations > 1){
+	iterations--;
+	changed = true;
+      } 
+    }else if(key_down[B_KEY]){
+      iterations++;
+      changed = true;
+    }
     
-    SDL_UnlockTexture(display->texture);
+    if(changed){
+      uint32_t format;
+      int32_t w,h;
+      int32_t pitch;
     
-    SDL_Rect rect = (SDL_Rect){0,0,WINDOW_WIDTH,WINDOW_HEIGHT};
+      SDL_QueryTexture(display->texture, &format, NULL, &w , &h);
+      SDL_LockTexture(display->texture, NULL, (void **) &pixels_screen, &pitch);
+
+      frac_gen->generate_fractal(pixels_screen,
+				 world_x - ((double)WINDOW_WIDTH * scale)/2.0,
+				 world_y - ((double)WINDOW_HEIGHT * scale)/2.0,
+				 ((double) WINDOW_WIDTH) * scale,
+				 ((double) WINDOW_HEIGHT) * scale,
+				 iterations);
     
-    //Update screen
-    SDL_RenderCopy(display->renderer, display->texture,NULL, &rect);
-    SDL_RenderPresent( display->renderer );
-   
+      SDL_UnlockTexture(display->texture);
+    
+      SDL_Rect rect = (SDL_Rect){0,0,WINDOW_WIDTH,WINDOW_HEIGHT};
+    
+      //Update screen
+      SDL_RenderCopy(display->renderer, display->texture,NULL, &rect);
+      SDL_RenderPresent( display->renderer );
+    }
 
     //FPS stuff
     frameTime = SDL_GetTicks() - currTime;
-    printf("\nmspf = %d\n",frameTime);
+    printf("\nmspf = %d: iter = %d\n",frameTime, iterations);
     if(frameTime > MS_PER_FRAME){
       frameTime = MS_PER_FRAME;
     }
 
     SDL_Delay(MS_PER_FRAME-frameTime);
     frame_count++;
+    changed = false;
   }
   
   clean_display(display);
