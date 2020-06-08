@@ -1,5 +1,8 @@
 #include "display.h"
 
+#define PERF_TEST
+
+
 Display* init_display(){
 
   Display *display = (Display *) calloc(1, sizeof(Display));
@@ -128,7 +131,8 @@ void display_loop(){
 
   Display *display = init_display();
 
-  int frame_count = 0;
+  uint64_t frame_count = 0;
+  uint64_t computing_frame_count = 0;
 
   uint8_t *pixels_screen;
 
@@ -137,15 +141,16 @@ void display_loop(){
 
   CudaFractalGenerator* frac_gen = new CudaFractalGenerator(WINDOW_WIDTH,
 							    WINDOW_HEIGHT);
-  double world_x = 0.0;
-  double world_y = 0.0;
+  double world_x = 0.3928641662323556;
+  double world_y = -0.1364456387924788;
   double scale = 1.0/100.0;
-  uint32_t max_iterations = 256;
+  uint32_t max_iterations = 1024;
   uint32_t *iterations = (uint32_t *) malloc(WINDOW_WIDTH * WINDOW_HEIGHT * sizeof(uint32_t));
   bool changed = true;
 
+ double total_time = 0;
   
-  while(run){
+  while(run && scale > 1.0/42076995493.1){
     currTime = SDL_GetTicks();
 
     
@@ -191,7 +196,12 @@ void display_loop(){
       max_iterations+=10;
       changed = true;
     }
-    
+    #ifdef PERF_TEST
+    if(frame_count%4 == 0){
+      scale /= ZOOM_SPEED;
+      changed = true;   
+    }
+    #endif
     if(changed){
 
       frac_gen->generate_fractal(iterations,
@@ -248,15 +258,24 @@ void display_loop(){
 
     //FPS stuff
     frameTime = SDL_GetTicks() - currTime;
-    printf("\nmspf = %d: iter = %d\n",frameTime, max_iterations);
+    total_time += (double)frameTime;
+    
+    printf("mspf = %d: iter = %d: scale = %.1lf: (x,y): (%.16lf,%.16lf)\n",
+	   frameTime, max_iterations, 1.0/scale, world_x, world_y);
     if(frameTime > MS_PER_FRAME){
       frameTime = MS_PER_FRAME;
     }
 
     SDL_Delay(MS_PER_FRAME-frameTime);
+    if(changed == true)
+      computing_frame_count++;
     frame_count++;
     changed = false;
   }
+
+  double avg_mspf = (double)total_time/(double)computing_frame_count;
+  double avg_fps = 1.0/avg_mspf;
+  printf("\n\navg_fps: %.4lf | avg_mspf: %.4lf\n", avg_fps, avg_mspf);
   
   clean_display(display);
 }

@@ -17,9 +17,11 @@ __global__ void fractal_kernel(uint32_t *iterations,
   double x_temp;
   double x = 0.0;
   double y = 0.0;
-  
+
   uint32_t curr_iteration = 0;
-  while(x * x + y * y <= 2*2 &&
+
+  //  #pragma unroll
+  while(x * x + y * y <= 4.0 &&
 	curr_iteration < max_iterations){
     x_temp = x * x - y * y + x_pos;
     y = 2 * x * y + y_pos;
@@ -27,12 +29,5 @@ __global__ void fractal_kernel(uint32_t *iterations,
     curr_iteration++;
   }
 
-  //did this to make shore we are not writing into
-  //unallocated memory but can still run any block
-  //size like 16x16 for better performance.
-
-  if(x_idx < w ||
-     y_idx < h){
-    iterations[ y_idx * w + x_idx] = curr_iteration;
-  }
+  iterations[ y_idx * w + x_idx] = curr_iteration;
 }
