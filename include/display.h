@@ -1,14 +1,15 @@
 #ifndef _DISPLAY_H_
 #define _DISPLAY_H_
 
-#include<SDL2/SDL.h>
-#include<stdint.h>
-#include<stdlib.h>
-#include<stdlib.h>
-#include<string>
-#include<time.h>
+#include <SDL2/SDL.h>
+#include <stdint.h>
+#include <stdlib.h>
+#include <stdlib.h>
+#include <string>
+#include <time.h>
 
-#include"fractal.h"
+#include "fractal.h"
+#include "color_utils.h"
 
 #define WINDOW_WIDTH 720
 #define WINDOW_HEIGHT 720 
@@ -20,7 +21,7 @@
 #define WINDOW_NAME "Fractal Generator"
 
 #define MOVEMENT_SPEED 10.0
-#define ZOOM_SPEED 1.01
+#define ZOOM_SPEED 1.05
 
 enum KEYS{W_KEY, A_KEY, S_KEY, D_KEY,
 	  R_KEY, F_KEY,

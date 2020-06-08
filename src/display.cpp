@@ -120,7 +120,7 @@ bool handle_events(bool key_down[]){
 
 void display_loop(){
   bool key_down[NUM_KEYS];
-  for(int i = 0 ;i < 8; i ++){
+  for(int i = 0 ;i < NUM_KEYS; i ++){
     key_down[i] = false;
   }
   uint32_t currTime = SDL_GetTicks();
@@ -136,12 +136,12 @@ void display_loop(){
 
 
   CudaFractalGenerator* frac_gen = new CudaFractalGenerator(WINDOW_WIDTH,
-							    WINDOW_HEIGHT,
-							    BYTES_PER_PIXEL);
+							    WINDOW_HEIGHT);
   double world_x = 0.0;
   double world_y = 0.0;
-  double scale = 1.0;
-  uint32_t iterations = 256;
+  double scale = 1.0/100.0;
+  uint32_t max_iterations = 256;
+  uint32_t *iterations = (uint32_t *) malloc(WINDOW_WIDTH * WINDOW_HEIGHT * sizeof(uint32_t));
   bool changed = true;
 
   
@@ -183,16 +183,24 @@ void display_loop(){
     }
 
     if(key_down[G_KEY]){
-        if(iterations > 1){
-	iterations--;
+        if(max_iterations > 10){
+	max_iterations-=10;
 	changed = true;
       } 
     }else if(key_down[B_KEY]){
-      iterations++;
+      max_iterations+=10;
       changed = true;
     }
     
     if(changed){
+
+      frac_gen->generate_fractal(iterations,
+				 world_x - ((double)WINDOW_WIDTH * scale)/2.0,
+				 world_y - ((double)WINDOW_HEIGHT * scale)/2.0,
+				 ((double) WINDOW_WIDTH) * scale,
+				 ((double) WINDOW_HEIGHT) * scale,
+				 max_iterations);
+    
       uint32_t format;
       int32_t w,h;
       int32_t pitch;
@@ -200,13 +208,35 @@ void display_loop(){
       SDL_QueryTexture(display->texture, &format, NULL, &w , &h);
       SDL_LockTexture(display->texture, NULL, (void **) &pixels_screen, &pitch);
 
-      frac_gen->generate_fractal(pixels_screen,
-				 world_x - ((double)WINDOW_WIDTH * scale)/2.0,
-				 world_y - ((double)WINDOW_HEIGHT * scale)/2.0,
-				 ((double) WINDOW_WIDTH) * scale,
-				 ((double) WINDOW_HEIGHT) * scale,
-				 iterations);
-    
+      hsv curr_hsv;
+      rgb curr_rgb;
+      uint8_t *curr_pixel;
+      uint32_t curr_iter;
+      
+      for(int x = 0; x < WINDOW_WIDTH; x++){
+	for(int y = 0; y < WINDOW_HEIGHT; y++){
+	  curr_pixel = pixels_screen + (WINDOW_WIDTH * y + x) * BYTES_PER_PIXEL;
+	  curr_iter = iterations[WINDOW_WIDTH * y + x];
+
+	  if(curr_iter < max_iterations){
+	    curr_hsv.h = ((double)curr_iter/(double)max_iterations) * 360.0;
+	    curr_hsv.s = 1.0;
+	    curr_hsv.v = 1.0;
+	    
+	    curr_rgb = hsv2rgb(curr_hsv);
+	    	  
+	    curr_pixel[1] = (uint8_t)(curr_rgb.b * 255.0);
+	    curr_pixel[2] = (uint8_t)(curr_rgb.g * 255.0);
+	    curr_pixel[3] = (uint8_t)(curr_rgb.r * 255.0);
+	  }else{
+	    curr_pixel[1] = 0;
+	    curr_pixel[2] = 0;
+	    curr_pixel[3] = 0;  
+	  }
+	}
+      }
+
+      
       SDL_UnlockTexture(display->texture);
     
       SDL_Rect rect = (SDL_Rect){0,0,WINDOW_WIDTH,WINDOW_HEIGHT};
@@ -218,7 +248,7 @@ void display_loop(){
 
     //FPS stuff
     frameTime = SDL_GetTicks() - currTime;
-    printf("\nmspf = %d: iter = %d\n",frameTime, iterations);
+    printf("\nmspf = %d: iter = %d\n",frameTime, max_iterations);
     if(frameTime > MS_PER_FRAME){
       frameTime = MS_PER_FRAME;
     }

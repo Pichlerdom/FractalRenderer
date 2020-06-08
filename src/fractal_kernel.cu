@@ -2,9 +2,8 @@
 
 
 
-__global__ void fractal_kernel(uint8_t *d_pixel_buffer,
+__global__ void fractal_kernel(uint32_t *iterations,
 			       uint32_t w, uint32_t h,
-			       uint32_t bytes_per_pixel,
 			       double world_x, double world_y,
 			       double world_width, double world_height,
 			       uint32_t max_iterations){
@@ -31,22 +30,9 @@ __global__ void fractal_kernel(uint8_t *d_pixel_buffer,
   //did this to make shore we are not writing into
   //unallocated memory but can still run any block
   //size like 16x16 for better performance.
-  uint8_t *curr_pixel = d_pixel_buffer + (y_idx * w + x_idx) * bytes_per_pixel;
 
   if(x_idx < w ||
      y_idx < h){
-    if(curr_iteration == max_iterations){
-      curr_pixel[0] = 255;
-      curr_pixel[1] = 0;
-      curr_pixel[2] = 0;
-      curr_pixel[3] = 0;
-    
-    }else{
-      curr_pixel[0] = 255;
-      curr_pixel[1] = 255 - (uint8_t) (((double)curr_iteration/(double)max_iterations) * 255.0);
-      curr_pixel[2] = 255 - (uint8_t) (((double)curr_iteration/(double)max_iterations) * 255.0);
-      curr_pixel[3] = 255 - (uint8_t) (((double)curr_iteration/(double)max_iterations) * 255.0);
-    
-    }
+    iterations[ y_idx * w + x_idx] = curr_iteration;
   }
 }
