@@ -18,7 +18,7 @@ CUDA_CC = nvcc
 CFLAGS = -Wall $(SDL2CFLAGS)
 
 #Cuda C Flags
-CUDA_CFLAGS = -lineinfo -maxrregcount=0 -gencode=arch=compute_50,code=\"sm_50,compute_50\"
+CUDA_CFLAGS =  -maxrregcount=0 -gencode=arch=compute_50,code=\"sm_50,compute_50\"
 
 #define library names
 LIBS = -lSDL2 -lSDL2_ttf -lm  -lcuda -lcudart -L/opt/cuda/lib
@@ -43,7 +43,7 @@ MAIN = $(TARGET_DIR)/$(TARGET_NAME)
 
 
 debug: CFLAGS += -g
-debug: CUDA_CFLAGS += -g
+debug: CUDA_CFLAGS += -g -lineinfo
 debug: $(MAIN) clean
 
 release: CFLAGS += -O2

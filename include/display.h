@@ -7,6 +7,7 @@
 #include <stdlib.h>
 #include <string>
 #include <time.h>
+#include <math.h>
 
 #include "fractal.h"
 #include "color_utils.h"

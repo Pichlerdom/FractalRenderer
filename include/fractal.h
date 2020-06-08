@@ -15,13 +15,13 @@ public:
   CudaFractalGenerator(uint32_t w, uint32_t h);
   ~CudaFractalGenerator();
 
-  void generate_fractal(uint32_t *iterations,
+  void generate_fractal(uint8_t *pixel_buffer,
 			double world_x, double world_y,
 			double world_width, double world_height,
 			uint32_t max_iterations);
 private:
   uint32_t m_w, m_h;
-  uint32_t *d_iterations;
+  uint8_t *d_pixel_buffer;
 };
 
 #endif

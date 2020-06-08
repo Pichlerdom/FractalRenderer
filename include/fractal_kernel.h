@@ -10,7 +10,7 @@
 #include <cuComplex.h>
 
 
-__global__ void fractal_kernel(uint32_t *d_iterations,
+__global__ void fractal_kernel(uint8_t *pixel_buffer,
 			       uint32_t w, uint32_t h,
 			       double world_x, double world_y,
 			       double world_width, double world_height,
