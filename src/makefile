@@ -18,7 +18,7 @@ CUDA_CC = nvcc
 CFLAGS = -Wall $(SDL2CFLAGS)
 
 #Cuda C Flags
-CUDA_CFLAGS =  -maxrregcount=0 -gencode=arch=compute_50,code=\"sm_50,compute_50\"
+CUDA_CFLAGS =  -m64 -maxrregcount=0 -gencode=arch=compute_50,code=\"sm_50,compute_50\" --fmad=false
 
 #define library names
 LIBS = -lSDL2 -lSDL2_ttf -lm  -lcuda -lcudart -L/opt/cuda/lib
@@ -31,10 +31,10 @@ SDL2CFLAGS = -D_REENRRANT
 SDL2INCLUDES = -I/usr/include/SDL2 -I/opt/cuda/include
 
 _INCLUDES = $(wildcard $(IDIR)/*.h)
-INCLUDES = $(SDL2INCLUDES) -I$(IDIR)
+INCLUDES = $(SDL2INCLUDES) -I$(IDIR) -I../include/gqd
 
 # define the C source files
-SRCS =  $(wildcard *.cpp) $(wildcard *.cu)
+SRCS =  $(wildcard *.cpp) $(wildcard *.cu) 
 
 #define object files
 OBJ =  $(filter %.o, $(patsubst %.cpp, $(ODIR)/%.o, $(SRCS)) $(patsubst %.cu, $(ODIR)/%.o, $(SRCS)) ) 
