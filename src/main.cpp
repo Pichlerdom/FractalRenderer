@@ -2,8 +2,12 @@
 
 
 int main(int argc, char* argv[]){
+  Display *disp = new Display();
 
-  display_loop();
+  
+  disp->display_loop();
+
+  delete disp;
 
   return 0;
 }

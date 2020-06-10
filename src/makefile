@@ -18,10 +18,10 @@ CUDA_CC = nvcc
 CFLAGS = -Wall $(SDL2CFLAGS)
 
 #Cuda C Flags
-CUDA_CFLAGS =  -m64 -maxrregcount=0 -gencode=arch=compute_50,code=\"sm_50,compute_50\" --fmad=false
+CUDA_CFLAGS =  -m64 -maxrregcount=0 -gencode=arch=compute_50,code=\"sm_50,compute_50\" --fmad=false -Xcudafe --diag_suppress=esa_on_defaulted_function_ignored
 
 #define library names
-LIBS = -lSDL2 -lSDL2_ttf -lm  -lcuda -lcudart -L/opt/cuda/lib
+LIBS = -lSDL2 -lSDL2_ttf -lm  -lcuda -lcudart -L/opt/cuda/lib -lGL -lGLEW
 
 #define library paths
 LFLAGS = -L"/usr/lib/x86_64-linux-gnu" 
@@ -43,7 +43,7 @@ MAIN = $(TARGET_DIR)/$(TARGET_NAME)
 
 
 debug: CFLAGS += -g
-debug: CUDA_CFLAGS += -g -lineinfo
+debug: CUDA_CFLAGS += -g -lineinfo 
 debug: $(MAIN) clean
 
 release: CFLAGS += -O2

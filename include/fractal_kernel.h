@@ -10,7 +10,7 @@
 #include <cuComplex.h>
 
 
-__global__ void fractal_kernel(uint8_t *pixel_buffer,
+__global__ void fractal_kernel(cudaSurfaceObject_t surface,
 			       uint32_t w, uint32_t h,
 			       double world_x, double world_y,
 			       double world_width, double world_height,

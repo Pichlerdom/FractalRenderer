@@ -1,5 +1,6 @@
 #include"fractal_kernel.h"
-__device__ void generate_color(uint8_t *curr_pixel, float h, float s, float v){
+
+__device__ void generate_color(float *curr_pixel, float h, float s, float v){
   float nNormalizedH = h;
   float nNormalizedS = s;
   float nNormalizedV = v;
@@ -36,14 +37,15 @@ __device__ void generate_color(uint8_t *curr_pixel, float h, float s, float v){
   else if (nI == 5.0F)
       { nR = nNormalizedV; nG = nM; nB = nN; }
 
-  curr_pixel[1] = (uint8_t)(nB * 255.0F);
-  curr_pixel[2] = (uint8_t)(nG * 255.0F);
-  curr_pixel[3] = (uint8_t)(nR * 255.0F);
+  curr_pixel[0] = nR;
+  curr_pixel[1] = nG;
+  curr_pixel[2] = nB;
+  curr_pixel[3] = 0.0f;
 
 }
 
 
-__global__ void fractal_kernel(uint8_t *pixel_buffer,
+__global__ void fractal_kernel(cudaSurfaceObject_t surface,
 			       uint32_t w, uint32_t h,
 			       double world_x, double world_y,
 			       double world_width, double world_height,
@@ -53,43 +55,58 @@ __global__ void fractal_kernel(uint8_t *pixel_buffer,
 
   double x_pos = world_x + (world_width/(double)w) * x_idx;
   double y_pos = world_y + (world_height/(double)h) * y_idx;
-
-
-  double x_temp;
-  double x = 0.0;
-  double y = 0.0;
-  double xx = x * x;
-  double yy = y * y;
-
-  uint32_t curr_iteration;
-  
-#pragma unroll
-  for(curr_iteration = 0;
-      curr_iteration < max_iterations;
-      curr_iteration++){    
-    if(xx + yy > 4.0) break;
-        
-    x_temp = xx - yy + x_pos;
-    y = 2 * x * y + y_pos;
-    x = x_temp;
     
-    xx = x * x;
-    yy = y * y;
-  }
-  __syncthreads();
+  if(x_idx < w && y_idx < h){
   
-  uint8_t *curr_pixel = pixel_buffer + (y_idx * w + x_idx) * 4;
-  if(curr_iteration < max_iterations){
 
-    generate_color(curr_pixel,
-		   ((float)curr_iteration)/((float)max_iterations),
-		   1.0f/logf(1.0f/sqrtf(xx + yy)),
-		   1.0f);
-  }else{
-    curr_pixel[1] = 0;
-    curr_pixel[2] = 0;
-    curr_pixel[3] = 0;
+    double x_temp;
+    double x = 0.0;
+    double y = 0.0;
+    double xx = x * x;
+    double yy = y * y;
+
+    uint32_t curr_iteration;
+  
+    for(curr_iteration = 0;
+	curr_iteration < max_iterations;
+	curr_iteration++){    
+      if(xx + yy > 4.0) break;
+        
+      x_temp = xx - yy + x_pos;
+      y = 2 * x * y + y_pos;
+      x = x_temp;
+    
+      xx = x * x;
+      yy = y * y;
+    }
+    __syncthreads();
+
+
+    float curr_pixel[4];
+    if(curr_iteration < max_iterations){
+      
+      generate_color(curr_pixel,
+		     ((float)curr_iteration)/((float)max_iterations),
+		     2.0f/sqrtf(xx + yy),
+		     1.0f);
+      
+    }else{
+      double angle = abs((yy/xx));
+      if(angle >= 1.0f){
+	angle = abs((xx/yy));
+      }
+      generate_color(curr_pixel,
+		     angle,
+		     1.0f,
+		     1.0f);
+    }
+    float4 data = make_float4(curr_pixel[0],
+			      curr_pixel[1],
+			      curr_pixel[2],
+			      curr_pixel[3]);
+
+    surf2Dwrite(data, surface, x_idx * sizeof(float4), y_idx);
+
   }
-
 
 }

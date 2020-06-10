@@ -1,0 +1,26 @@
+-*- mode: compilation; default-directory: "~/Development/fractal_renderer/src/" -*-
+Compilation started at Wed Jun 10 12:38:41
+
+make -j8 -B release
+g++ -Wall -D_REENRRANT -O2 -I/usr/include/SDL2 -I/opt/cuda/include -I../include -I../include/gqd -c color_utils.cpp -o ../obj/color_utils.o
+g++ -Wall -D_REENRRANT -O2 -I/usr/include/SDL2 -I/opt/cuda/include -I../include -I../include/gqd -c display.cpp -o ../obj/display.o
+g++ -Wall -D_REENRRANT -O2 -I/usr/include/SDL2 -I/opt/cuda/include -I../include -I../include/gqd -c event_handler.cpp -o ../obj/event_handler.o
+g++ -Wall -D_REENRRANT -O2 -I/usr/include/SDL2 -I/opt/cuda/include -I../include -I../include/gqd -c main.cpp -o ../obj/main.o
+g++ -Wall -D_REENRRANT -O2 -I/usr/include/SDL2 -I/opt/cuda/include -I../include -I../include/gqd -c renderer.cpp -o ../obj/renderer.o
+g++ -Wall -D_REENRRANT -O2 -I/usr/include/SDL2 -I/opt/cuda/include -I../include -I../include/gqd -c shader.cpp -o ../obj/shader.o
+nvcc -m64 -maxrregcount=0 -gencode=arch=compute_50,code=\"sm_50,compute_50\" --fmad=false -Xcudafe --diag_suppress=esa_on_defaulted_function_ignored -O2 -I/usr/include/SDL2 -I/opt/cuda/include -I../include -I../include/gqd -c fractal.cu -o ../obj/fractal.o
+nvcc -m64 -maxrregcount=0 -gencode=arch=compute_50,code=\"sm_50,compute_50\" --fmad=false -Xcudafe --diag_suppress=esa_on_defaulted_function_ignored -O2 -I/usr/include/SDL2 -I/opt/cuda/include -I../include -I../include/gqd -c fractal_kernel.cu -o ../obj/fractal_kernel.o
+fractal.cu:76: error: unterminated #ifdef
+   #ifdef _DEBUG_
+ 
+fractal.cu:70: error: unterminated #ifdef
+   #ifdef _DEBUG_
+ 
+make: *** [makefile:60: ../obj/fractal.o] Error 1
+make: *** Waiting for unfinished jobs....
+display.cpp: In destructor ‘Display::~Display()’:
+display.cpp:25:3: warning: deleting object of polymorphic class type ‘CudaFractalGenerator’ which has non-virtual destructor might cause undefined behavior [-Wdelete-non-virtual-dtor]
+   25 |   delete frac_gen;
+      |   ^~~~~~~~~~~~~~~
+
+Compilation exited abnormally with code 2 at Wed Jun 10 12:38:43
