@@ -21,8 +21,8 @@
 
 #include "event_handler.h"
 
-#define WINDOW_WIDTH 1920
-#define WINDOW_HEIGHT 1080 
+#define WINDOW_WIDTH 1020
+#define WINDOW_HEIGHT 1020 
 
 #define MS_PER_FRAME 16
 
@@ -30,8 +30,8 @@
 
 #define WINDOW_NAME "Fractal Generator"
 
-#define MOVEMENT_SPEED 10.0
-#define ZOOM_SPEED 1.05
+#define MOVEMENT_SPEED 1.0
+#define ZOOM_SPEED 1.01
 
 
 class Display{
@@ -45,7 +45,7 @@ private:
   void render();
   void update();
 
-  bool handle_keyboard();
+  void handle_keyboard();
   
   enum KEYS{W_KEY, A_KEY, S_KEY, D_KEY,
 	    R_KEY, F_KEY,

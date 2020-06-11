@@ -11,10 +11,12 @@
 #define GL3_PROTOTYPE 1
 #include <GL/glew.h>
 #include <glm/glm.hpp>
+
 #include <SDL2/SDL.h>
 #include <math.h>
 
 #include "shader.h"
+
 #include "model.h"
 
 class Renderer{
@@ -37,7 +39,7 @@ class Renderer{
   
   void render_start();
 
-  void render_model( Model *model);
+  void render_model(Model *model);
 
   void render_end();
   

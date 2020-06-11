@@ -66,7 +66,7 @@ __global__ void fractal_kernel(cudaSurfaceObject_t surface,
     double yy = y * y;
 
     uint32_t curr_iteration;
-  
+    #pragma unroll  
     for(curr_iteration = 0;
 	curr_iteration < max_iterations;
 	curr_iteration++){    
@@ -83,23 +83,25 @@ __global__ void fractal_kernel(cudaSurfaceObject_t surface,
 
 
     float curr_pixel[4];
+    double angle = 0 ,sat = 0;
     if(curr_iteration < max_iterations){
       
-      generate_color(curr_pixel,
-		     ((float)curr_iteration)/((float)max_iterations),
-		     2.0f/sqrtf(xx + yy),
-		     1.0f);
-      
+      angle = ((float)curr_iteration)/((float)max_iterations);
+      sat = 2.0f/sqrtf(xx + yy);
     }else{
-      double angle = abs((yy/xx));
+      angle = abs((yy/xx));
       if(angle >= 1.0f){
 	angle = abs((xx/yy));
       }
-      generate_color(curr_pixel,
-		     angle,
-		     1.0f,
-		     1.0f);
+      sat = 1.0f;
     }
+    
+    generate_color(curr_pixel,
+		   angle,
+		   sat,
+		   1.0f);
+    
+
     float4 data = make_float4(curr_pixel[0],
 			      curr_pixel[1],
 			      curr_pixel[2],

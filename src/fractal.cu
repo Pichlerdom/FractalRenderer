@@ -1,11 +1,15 @@
 #include "fractal.h"
 
-#include <stdio.h>
+
+#define _DEBUG_
 
 CudaFractalGenerator::CudaFractalGenerator(uint32_t w, uint32_t h){
   m_w = w;
   m_h = h;
-
+  m_scale = 1.0f;
+  m_curr_scale = 1.0f;
+  m_new_scale = 1.0f;
+  
   create_opengl_buffers();
   
   cudaSetDevice(0);
@@ -32,62 +36,115 @@ void CudaFractalGenerator::render(){
   glBindVertexArray(vertex_array);
   glBindBuffer(GL_ELEMENT_ARRAY_BUFFER,ibo);
  
-  
-
   glActiveTexture(GL_TEXTURE0);
-  glBindTexture(GL_TEXTURE_2D, texture);
+  glBindTexture(GL_TEXTURE_2D, textures[TEXTURE_FRONT]);
 
   glDrawElements(GL_TRIANGLES, 2 * 3, GL_UNSIGNED_SHORT, (void*)0);
   //glDrawArrays(GL_TRIANGLES, 0, 6);
 
   glBindBuffer(GL_ELEMENT_ARRAY_BUFFER,0);
   glBindVertexArray(0);
+  
 }
 
 void CudaFractalGenerator::update(){
   cuda_pass();
 }
 
+glm::mat4 CudaFractalGenerator::get_model(){
+
+  //TODO::::
+  glm::mat4 trans_mat = glm::translate(glm::mat4(1.0f),
+				   glm::vec3(m_curr_world_y - m_world_y,
+					     m_curr_world_x - m_world_x,
+					     1.0f));
+  glm::mat4 scale_mat = glm::scale(glm::mat4(1.0f), glm::vec3(m_curr_scale / m_scale));
+  return scale_mat; 
+}
+
 void CudaFractalGenerator::cuda_pass(){
   timer->tick();
 
-  auto e = cudaGraphicsGLRegisterImage(&cuda_texture, texture,
+  if(working_on_texture &&
+     cudaEventQuery(cuda_event) == cudaSuccess){
+    auto e = cudaEventDestroy(cuda_event);
+    
+    e = cudaDestroySurfaceObject(surface);
+    
+    e = cudaGraphicsUnmapResources(1, &cuda_texture, 0);
+    
+    e = cudaGraphicsUnregisterResource(cuda_texture);
+
+    GLuint temp = textures[TEXTURE_FRONT];
+    textures[TEXTURE_FRONT] = textures[TEXTURE_BACK];
+    textures[TEXTURE_BACK] = temp;
+    working_on_texture = false;
+
+    m_curr_scale = m_new_scale;
+    m_curr_world_x = m_new_world_x;
+    m_curr_world_y = m_new_world_y;
+    
+#ifdef _DEBUG_
+    printf("iter %d ,w_x %.4lf ,w_y %.4lf, t %.4lf, s %.4lf\n",
+	   m_iterations,
+	   m_world_x, m_world_y,
+	   timer->tick(),
+	   m_curr_scale);
+    fflush(stdout);
+#endif
+  }
+  
+  if(!working_on_texture && changed){
+    m_new_scale = m_scale;
+    m_new_world_x = m_world_x;
+    m_new_world_y = m_world_y;
+
+    auto e = cudaGraphicsGLRegisterImage(&cuda_texture, textures[TEXTURE_BACK],
 				       GL_TEXTURE_2D,
 				       cudaGraphicsRegisterFlagsSurfaceLoadStore);  
-  e = cudaGraphicsMapResources(1, &cuda_texture, 0);
+    e = cudaGraphicsMapResources(1, &cuda_texture, 0);
   
-  cudaArray_t texture_array;
-  e = cudaGraphicsSubResourceGetMappedArray(&texture_array, cuda_texture, 0, 0);
+    cudaArray_t texture_array;
+    e = cudaGraphicsSubResourceGetMappedArray(&texture_array, cuda_texture, 0, 0);
 
-  
-  generate_fractal(&texture_array);
+    struct cudaResourceDesc desc;
+    memset(&desc, 0, sizeof(struct cudaResourceDesc));
+    desc.resType = cudaResourceTypeArray;
+    desc.res.array.array = texture_array;
 
 
-  e = cudaGraphicsUnmapResources(1, &cuda_texture, 0);
+    e = cudaCreateSurfaceObject(&surface, &desc);
+    e = cudaEventCreateWithFlags(&cuda_event, cudaEventDisableTiming);
 
-  e = cudaGraphicsUnregisterResource(cuda_texture);
-
-  #ifdef _DEBUG_
-  printf("iter %d ,w_x %.4lf ,w_y %.4lf, t %.4lf\n",
-	 m_iterations,
-	 m_world_x, m_world_y,
-	 timer->tick());
-  fflush(stdout);
-  #endif
+    working_on_texture = true;
+    changed = false;
+    generate_fractal(surface);
+    
+  }
 }
 
 void CudaFractalGenerator::set_iterations(uint32_t iterations){
-  m_iterations = iterations;
+  if(m_iterations != iterations){
+    changed = true;
+    m_iterations = iterations;
+  }
 }
 
 void CudaFractalGenerator::set_world_pos(double world_x, double world_y){
-  m_world_x = world_x;
-  m_world_y = world_y;
+  if(m_world_x != world_x ||
+     m_world_y != world_y){
+    changed = true;
+    m_world_x = world_x;
+    m_world_y = world_y;
+  }
 }
 
-void CudaFractalGenerator::set_world_size(double world_h, double world_w){
-  m_world_w = world_w;
-  m_world_h = world_h;
+
+void CudaFractalGenerator::set_scale(double scale){
+  if(m_scale != scale){
+    m_scale = scale;
+    changed = true;
+  }
 }
 
 void CudaFractalGenerator::create_opengl_buffers(){
@@ -118,10 +175,20 @@ void CudaFractalGenerator::create_opengl_buffers(){
   glEnableVertexAttribArray(TEXTURE_ATTR);
 
   //Texture
-  //glGenSamplers(1, &texture_sampler);
     
-  glGenTextures(1, &texture);
-  glBindTexture(GL_TEXTURE_2D, texture);
+  glGenTextures(2, textures);
+  glBindTexture(GL_TEXTURE_2D, textures[TEXTURE_FRONT]);
+
+  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP);
+  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP);
+
+  glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA32F,
+	       m_w, m_h, 0, GL_RGBA,
+	       GL_FLOAT, nullptr);
+  
+  glBindTexture(GL_TEXTURE_2D, textures[TEXTURE_BACK]);
 
   glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
   glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
@@ -147,31 +214,20 @@ void CudaFractalGenerator::create_opengl_buffers(){
   glBindVertexArray(0);
 }
 
-void CudaFractalGenerator::generate_fractal(cudaArray_t *write_array){
-
-  struct cudaResourceDesc desc;
-  memset(&desc, 0, sizeof(struct cudaResourceDesc));
-  desc.resType = cudaResourceTypeArray;
-  desc.res.array.array = *write_array;
-
-  cudaSurfaceObject_t surface;
-  auto e = cudaCreateSurfaceObject(&surface, &desc);
+void CudaFractalGenerator::generate_fractal(cudaSurfaceObject_t surface){
 
   dim3 block(BLOCK_N, BLOCK_N);
   dim3 grid((uint32_t) ceil( (double)m_w / (double)BLOCK_N ),
 	    (uint32_t) ceil( (double)m_h / (double)BLOCK_N ));
 
-  fractal_kernel<<<grid,block>>>(surface,
-				 m_w, m_h, 
-				 m_world_x, m_world_y,
-				 m_world_w, m_world_h,
-				 m_iterations);
-  e = cudaPeekAtLastError();
 
-  e = cudaDestroySurfaceObject(surface);
-
-  if (e != cudaSuccess)
-        printf("kernel launch failed with error \"%s\".\n",
-               cudaGetErrorString(e));
-  
+  //stream 0 to get concurrency to rendering
+  fractal_kernel<<<grid,block,0>>>(surface,
+				   m_w, m_h, 
+				   m_world_x - (((double) m_h) * m_scale) / 2.0f,
+				   m_world_y - (((double) m_w) * m_scale) / 2.0f,
+				   ((double) m_w) * m_scale,
+				   ((double) m_h) * m_scale,
+				   m_iterations);
+  cudaEventRecord(cuda_event,0);  
 }
