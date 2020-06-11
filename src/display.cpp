@@ -16,7 +16,7 @@ Display::Display(){
   scale = 1.0f;
   world_x = 0.0f;
   world_y = 0.0f;
-  max_iterations = 1028;
+  max_iterations = 512;
  
 }
 

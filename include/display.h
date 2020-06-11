@@ -21,8 +21,8 @@
 
 #include "event_handler.h"
 
-#define WINDOW_WIDTH 1020
-#define WINDOW_HEIGHT 1020 
+#define WINDOW_WIDTH 1080
+#define WINDOW_HEIGHT 1080 
 
 #define MS_PER_FRAME 16
 
