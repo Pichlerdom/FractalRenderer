@@ -21,8 +21,8 @@
 
 #include "event_handler.h"
 
-#define WINDOW_WIDTH 1080
-#define WINDOW_HEIGHT 1080 
+#define WINDOW_WIDTH 720
+#define WINDOW_HEIGHT 720 
 
 #define MS_PER_FRAME 16
 
@@ -31,8 +31,8 @@
 #define WINDOW_NAME "Fractal Generator"
 
 #define MOVEMENT_SPEED 1.0
-#define ZOOM_SPEED 1.01
-
+#define ZOOM_SPEED 1.01f//0.0000000001f
+#define ITER_UPDATE_TIME 500.0f
 
 class Display{
 public:
@@ -43,9 +43,9 @@ public:
 
 private:
   void render();
-  void update();
+  void update(float dt);
 
-  void handle_keyboard();
+  void handle_keyboard(float dt);
   
   enum KEYS{W_KEY, A_KEY, S_KEY, D_KEY,
 	    R_KEY, F_KEY,
@@ -57,6 +57,9 @@ private:
   CudaFractalGenerator *frac_gen;
   EventHandler *handler;
 
+  Timer *timer;
+  double time_since_iter_update;
+  
   double scale;
   double world_x, world_y;
   uint32_t max_iterations;

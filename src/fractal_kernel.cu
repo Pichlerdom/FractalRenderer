@@ -64,7 +64,7 @@ __global__ void fractal_kernel(cudaSurfaceObject_t surface,
     double y = 0.0;
     double xx = x * x;
     double yy = y * y;
-
+    
     uint32_t curr_iteration;
     #pragma unroll  
     for(curr_iteration = 0;

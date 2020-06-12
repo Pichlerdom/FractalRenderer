@@ -63,13 +63,13 @@ void EventHandler::HandleMouseMove( const SDL_Event &event )
 	newEvent.mouseMove.newPos.x = event.motion.x;
 	newEvent.mouseMove.newPos.y = event.motion.y;
 
+	
 	newEvent.mouseMove.relativePos.x = event.motion.xrel;
 	newEvent.mouseMove.relativePos.y = event.motion.yrel;
 
 	events.push_back( newEvent );
 
 	mousePoint = newEvent.mouseMove.newPos;
-	
 	mousePos.x += event.motion.xrel;
 	mousePos.y += event.motion.yrel;
 	

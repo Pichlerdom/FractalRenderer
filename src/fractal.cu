@@ -22,7 +22,7 @@ CudaFractalGenerator::~CudaFractalGenerator(){
   glDisableVertexAttribArray(vertex_array);
   glDeleteBuffers(2,vbo);
   glDeleteVertexArrays(1,&vertex_array);  
-  
+
   delete timer;
 
 }
