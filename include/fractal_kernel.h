@@ -10,10 +10,16 @@
 #include <cuComplex.h>
 
 
-__global__ void fractal_kernel(cudaSurfaceObject_t surface,
+__global__ void mandelbrot_kernel(cudaSurfaceObject_t surface,
 			       uint32_t w, uint32_t h,
 			       double world_x, double world_y,
 			       double world_width, double world_height,
 			       uint32_t max_iterations);
+
+__global__ void burning_ship_kernel(cudaSurfaceObject_t surface,
+				    uint32_t w, uint32_t h,
+				    double world_x, double world_y,
+				    double world_width, double world_height,
+				    uint32_t max_iterations);
 
 #endif

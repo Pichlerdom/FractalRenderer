@@ -21,8 +21,8 @@
 
 #include "event_handler.h"
 
-#define WINDOW_WIDTH 720
-#define WINDOW_HEIGHT 720 
+#define WINDOW_WIDTH 1080
+#define WINDOW_HEIGHT 1080 
 
 #define MS_PER_FRAME 16
 
@@ -31,8 +31,10 @@
 #define WINDOW_NAME "Fractal Generator"
 
 #define MOVEMENT_SPEED 1.0
-#define ZOOM_SPEED 1.01f//0.0000000001f
+#define ZOOM_SPEED 1.04f//0.0000000001f
 #define ITER_UPDATE_TIME 500.0f
+
+
 
 class Display{
 public:

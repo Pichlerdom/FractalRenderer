@@ -45,7 +45,7 @@ __device__ void generate_color(float *curr_pixel, float h, float s, float v){
 }
 
 
-__global__ void fractal_kernel(cudaSurfaceObject_t surface,
+__global__ void mandelbrot_kernel(cudaSurfaceObject_t surface,
 			       uint32_t w, uint32_t h,
 			       double world_x, double world_y,
 			       double world_width, double world_height,
@@ -111,4 +111,74 @@ __global__ void fractal_kernel(cudaSurfaceObject_t surface,
 
   }
 
+}
+
+__global__ void burning_ship_kernel(cudaSurfaceObject_t surface,
+				    uint32_t w, uint32_t h,
+				    double world_x, double world_y,
+				    double world_width, double world_height,
+				    uint32_t max_iterations){
+
+  uint32_t x_idx = blockDim.x * blockIdx.x + threadIdx.x;
+  uint32_t y_idx = blockDim.y * blockIdx.y + threadIdx.y;
+
+  double x_pos = world_x + (world_width/(double)w) * x_idx;
+  double y_pos = world_y + (world_height/(double)h) * y_idx;
+    
+  if(x_idx < w && y_idx < h){
+  
+
+    double x_temp;
+    double x = 0.0;
+    double y = 0.0;
+    double xx = x * x;
+    double yy = y * y;
+    
+    uint32_t curr_iteration;
+    #pragma unroll  
+    for(curr_iteration = 0;
+	curr_iteration < max_iterations;
+	curr_iteration++){    
+      if(xx + yy > 4.0) break;
+        
+      x_temp = xx - yy + x_pos;
+      y = fabs(2 * x * y + y_pos);
+      x = fabs(x_temp);
+    
+      xx = x * x;
+      yy = y * y;
+    }
+    __syncthreads();
+
+
+    float curr_pixel[4];
+    double angle = 0 ,sat = 0;
+    if(curr_iteration < max_iterations){
+      
+      angle = ((float)curr_iteration)/((float)max_iterations);
+      sat = 1.0f;//2.0f/sqrtf(xx + yy);
+    }else{
+      /* angle = abs((yy/xx));
+      if(angle >= 1.0f){
+	angle = abs((xx/yy));
+      }
+      sat = 1.0f;*/
+      sat = 0.0f;
+      angle = 0.0f;
+    }
+    
+    generate_color(curr_pixel,
+		   angle,
+		   sat,
+		   1.0f);
+    
+
+    float4 data = make_float4(curr_pixel[0],
+			      curr_pixel[1],
+			      curr_pixel[2],
+			      curr_pixel[3]);
+
+    surf2Dwrite(data, surface, x_idx * sizeof(float4), y_idx);
+
+  }
 }

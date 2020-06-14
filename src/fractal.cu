@@ -6,10 +6,18 @@
 CudaFractalGenerator::CudaFractalGenerator(uint32_t w, uint32_t h){
   m_w = w;
   m_h = h;
+
+  selected_fractal = MANDELBROT;
+  
   m_scale = 1.0f;
   m_curr_scale = 1.0f;
   m_new_scale = 1.0f;
-  
+
+  m_curr_world_x = 0.0f;
+  m_curr_world_y = 0.0f;
+  m_new_world_x = 0.0f;
+  m_new_world_x = 0.0f;
+
   create_opengl_buffers();
   
   cudaSetDevice(0);
@@ -55,11 +63,13 @@ glm::mat4 CudaFractalGenerator::get_model(){
 
   //TODO::::
   glm::mat4 trans_mat = glm::translate(glm::mat4(1.0f),
-				   glm::vec3(m_curr_world_y - m_world_y,
-					     m_curr_world_x - m_world_x,
+				       glm::vec3( m_world_y - m_curr_world_y,
+						 m_world_x - m_curr_world_x,
+					     
 					     1.0f));
+  printf("%.3f, %.3f\n\n", m_curr_world_x - m_world_x, m_curr_world_y - m_world_y);
   glm::mat4 scale_mat = glm::scale(glm::mat4(1.0f), glm::vec3(m_curr_scale / m_scale));
-  return scale_mat; 
+  return trans_mat * scale_mat ; 
 }
 
 void CudaFractalGenerator::cuda_pass(){
@@ -147,6 +157,11 @@ void CudaFractalGenerator::set_scale(double scale){
   }
 }
 
+void CudaFractalGenerator::set_fractal(uint32_t fractal){
+  if (fractal < NUM_FRACTALS)
+    selected_fractal = fractal;
+}
+
 void CudaFractalGenerator::create_opengl_buffers(){
 
   glGenVertexArrays(1, &vertex_array);
@@ -221,13 +236,28 @@ void CudaFractalGenerator::generate_fractal(cudaSurfaceObject_t surface){
 	    (uint32_t) ceil( (double)m_h / (double)BLOCK_N ));
 
 
-  //stream 0 to get concurrency to rendering
-  fractal_kernel<<<grid,block,0>>>(surface,
-				   m_w, m_h, 
-				   m_world_x - (((double) m_h) * m_scale) / 2.0f,
-				   m_world_y - (((double) m_w) * m_scale) / 2.0f,
-				   ((double) m_w) * m_scale,
-				   ((double) m_h) * m_scale,
-				   m_iterations);
+  switch(selected_fractal){
+  case BURNING_SHIP:
+    burning_ship_kernel<<<grid,block,0>>>(surface,
+					  m_w, m_h, 
+					  m_world_x - (((double) m_h) * m_scale) / 2.0f,
+					  m_world_y - (((double) m_w) * m_scale) / 2.0f,
+					  ((double) m_w) * m_scale,
+					  ((double) m_h) * m_scale,
+					  m_iterations);
+    break;
+  case MANDELBROT:
+  
+  default:
+    //stream 0 to get concurrency to rendering
+    mandelbrot_kernel<<<grid,block,0>>>(surface,
+					m_w, m_h, 
+					m_world_x - (((double) m_h) * m_scale) / 2.0f,
+					m_world_y - (((double) m_w) * m_scale) / 2.0f,
+					((double) m_w) * m_scale,
+					((double) m_h) * m_scale,
+					m_iterations);
+
+  }
   cudaEventRecord(cuda_event,0);  
 }

@@ -79,6 +79,11 @@ void Display::handle_keyboard(float dt){
     scale *= ZOOM_SPEED/* * dt*/;
   }
 
+  if(handler->IsKeyDown(SDLK_m)){
+    frac_gen->set_fractal(CudaFractalGenerator::MANDELBROT);
+  }else if(handler->IsKeyDown(SDLK_u)){
+    frac_gen->set_fractal(CudaFractalGenerator::BURNING_SHIP);
+  }
   
   if(time_since_iter_update <= ITER_UPDATE_TIME){
     if(handler->IsKeyDown(SDLK_g)){

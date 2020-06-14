@@ -25,6 +25,7 @@
 #define TEXTURE_FRONT 0
 #define TEXTURE_BACK 1
 
+
 class CudaFractalGenerator: public Model{
 public:
   CudaFractalGenerator(uint32_t w, uint32_t h);
@@ -39,14 +40,19 @@ public:
   void set_world_pos(double world_x, double world_y);  
   void set_scale(double scale);
 
-  GLuint get_texture_sampler();
+  void set_fractal(uint32_t fractal);
   
+  GLuint get_texture_sampler();
+
+  enum FRACTALS{ MANDELBROT, BURNING_SHIP, NUM_FRACTALS};
+
 private:
+
   void create_opengl_buffers();
 
   void cuda_pass();
   void generate_fractal(cudaSurfaceObject_t surface);
-
+  
   GLuint vertex_array;
   GLuint vbo[2];
   GLuint ibo;
@@ -58,10 +64,11 @@ private:
   cudaSurfaceObject_t surface;
   cudaEvent_t cuda_event;
   
-
   
   uint32_t m_w, m_h;
 
+  uint32_t selected_fractal;
+  
   uint32_t m_iterations;
   double m_world_x, m_world_y;
 
