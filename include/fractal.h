@@ -44,7 +44,10 @@ public:
   
   GLuint get_texture_sampler();
 
-  enum FRACTALS{ MANDELBROT, BURNING_SHIP, NUM_FRACTALS};
+  enum FRACTALS{MANDELBROT = 0,
+		BURNING_SHIP,
+		JULIA_SET,
+		NUM_FRACTALS};
 
 private:
 
@@ -74,7 +77,8 @@ private:
 
   double m_curr_world_x, m_curr_world_y;
   double m_new_world_x, m_new_world_y;
-
+  double m_mandelbrot_x, m_mandelbrot_y;
+  
   double m_scale, m_curr_scale, m_new_scale;
   Timer* timer;
 

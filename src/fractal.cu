@@ -1,7 +1,6 @@
 #include "fractal.h"
 
-
-#define _DEBUG_
+#define  _DEBUG_
 
 CudaFractalGenerator::CudaFractalGenerator(uint32_t w, uint32_t h){
   m_w = w;
@@ -67,9 +66,10 @@ glm::mat4 CudaFractalGenerator::get_model(){
 						 m_world_x - m_curr_world_x,
 					     
 					     1.0f));
-  printf("%.3f, %.3f\n\n", m_curr_world_x - m_world_x, m_curr_world_y - m_world_y);
+  
   glm::mat4 scale_mat = glm::scale(glm::mat4(1.0f), glm::vec3(m_curr_scale / m_scale));
-  return trans_mat * scale_mat ; 
+
+  return scale_mat ; 
 }
 
 void CudaFractalGenerator::cuda_pass(){
@@ -246,10 +246,21 @@ void CudaFractalGenerator::generate_fractal(cudaSurfaceObject_t surface){
 					  ((double) m_h) * m_scale,
 					  m_iterations);
     break;
+  case JULIA_SET:
+    julia_set_kernel<<<grid,block>>>(surface,
+				   m_w, m_h,
+				   m_mandelbrot_x, m_mandelbrot_y,
+				   m_world_x - (((double) m_h) * m_scale) / 2.0f,
+				   m_world_y - (((double) m_w) * m_scale) / 2.0f,
+				   ((double) m_w) * m_scale,
+				   ((double) m_h) * m_scale,
+				     m_iterations);
+
+    break;
   case MANDELBROT:
-  
   default:
-    //stream 0 to get concurrency to rendering
+    m_mandelbrot_x = m_world_x - (((double) m_h) * m_scale) / 2.0f;
+    m_mandelbrot_y = m_world_y - (((double) m_w) * m_scale) / 2.0f;
     mandelbrot_kernel<<<grid,block,0>>>(surface,
 					m_w, m_h, 
 					m_world_x - (((double) m_h) * m_scale) / 2.0f,
