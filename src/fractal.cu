@@ -47,7 +47,6 @@ void CudaFractalGenerator::render(){
   glBindTexture(GL_TEXTURE_2D, textures[TEXTURE_FRONT]);
 
   glDrawElements(GL_TRIANGLES, 2 * 3, GL_UNSIGNED_SHORT, (void*)0);
-  //glDrawArrays(GL_TRIANGLES, 0, 6);
 
   glBindBuffer(GL_ELEMENT_ARRAY_BUFFER,0);
   glBindVertexArray(0);
@@ -73,8 +72,6 @@ glm::mat4 CudaFractalGenerator::get_model(){
 }
 
 void CudaFractalGenerator::cuda_pass(){
-  timer->tick();
-
   if(working_on_texture &&
      cudaEventQuery(cuda_event) == cudaSuccess){
     auto e = cudaEventDestroy(cuda_event);
@@ -93,21 +90,16 @@ void CudaFractalGenerator::cuda_pass(){
     m_curr_scale = m_new_scale;
     m_curr_world_x = m_new_world_x;
     m_curr_world_y = m_new_world_y;
-    
-#ifdef _DEBUG_
-    printf("iter %d ,w_x %.4lf ,w_y %.4lf, t %.4lf, s %.4lf\n",
-	   m_iterations,
-	   m_world_x, m_world_y,
-	   timer->tick(),
-	   m_curr_scale);
-    fflush(stdout);
-#endif
+
+    last_frame_time = timer->tick();
+    printf("iter: %.d, mslf: %.4f\n",m_iterations, last_frame_time);
   }
   
   if(!working_on_texture && changed){
     m_new_scale = m_scale;
     m_new_world_x = m_world_x;
     m_new_world_y = m_world_y;
+    timer->tick();
 
     auto e = cudaGraphicsGLRegisterImage(&cuda_texture, textures[TEXTURE_BACK],
 				       GL_TEXTURE_2D,
@@ -149,6 +141,11 @@ void CudaFractalGenerator::set_world_pos(double world_x, double world_y){
   }
 }
 
+void CudaFractalGenerator::move_julia_constant(double delta_x, double delta_y){
+  m_mandelbrot_x += delta_x;
+  m_mandelbrot_y += delta_y;
+  changed = true;
+}
 
 void CudaFractalGenerator::set_scale(double scale){
   if(m_scale != scale){
@@ -160,6 +157,7 @@ void CudaFractalGenerator::set_scale(double scale){
 void CudaFractalGenerator::set_fractal(uint32_t fractal){
   if (fractal < NUM_FRACTALS)
     selected_fractal = fractal;
+  changed = true;
 }
 
 void CudaFractalGenerator::create_opengl_buffers(){
@@ -205,8 +203,8 @@ void CudaFractalGenerator::create_opengl_buffers(){
   
   glBindTexture(GL_TEXTURE_2D, textures[TEXTURE_BACK]);
 
-  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
   glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP);
   glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP);
 

@@ -36,8 +36,7 @@ void Display::display_loop(){
     dt = timer->tick();    
     update(dt);
     
-    render();
-    
+    render();    
   }
 }
 
@@ -79,7 +78,18 @@ void Display::handle_keyboard(float dt){
     scale *= ZOOM_SPEED/* * dt*/;
   }
 
+  if(handler->IsKeyDown(SDLK_UP)){
+    frac_gen->move_julia_constant(MANDELBROT_MOVEMENT_SPEED * scale * dt, 0.0f);
+  }else if(handler->IsKeyDown(SDLK_DOWN)){
+    frac_gen->move_julia_constant(-MANDELBROT_MOVEMENT_SPEED * scale * dt, 0.0f);
+  }
 
+  if(handler->IsKeyDown(SDLK_RIGHT)){
+    frac_gen->move_julia_constant(0.0f, MANDELBROT_MOVEMENT_SPEED * scale * dt);
+  }else if(handler->IsKeyDown(SDLK_LEFT)){
+    frac_gen->move_julia_constant(0.0f, -MANDELBROT_MOVEMENT_SPEED * scale * dt);
+  }
+  
   for (int i = 0;
        i < CudaFractalGenerator::NUM_FRACTALS;
        i++){

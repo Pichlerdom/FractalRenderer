@@ -49,6 +49,9 @@ public:
 		JULIA_SET,
 		NUM_FRACTALS};
 
+  void move_julia_constant(double delta_x, double delta_y);
+  
+  double last_frame_time = 0;
 private:
 
   void create_opengl_buffers();
@@ -80,6 +83,7 @@ private:
   double m_mandelbrot_x, m_mandelbrot_y;
   
   double m_scale, m_curr_scale, m_new_scale;
+
   Timer* timer;
 
   bool working_on_texture = false;

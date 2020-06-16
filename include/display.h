@@ -30,7 +30,8 @@
 
 #define WINDOW_NAME "Fractal Generator"
 
-#define MOVEMENT_SPEED 1.0
+#define MOVEMENT_SPEED 1.0f
+#define MANDELBROT_MOVEMENT_SPEED 0.01f
 #define ZOOM_SPEED 1.04f//0.0000000001f
 #define ITER_UPDATE_TIME 500.0f
 

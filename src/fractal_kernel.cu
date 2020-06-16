@@ -69,10 +69,7 @@ __global__ void mandelbrot_kernel(cudaSurfaceObject_t surface,
     
   
   if(x_idx < w && y_idx < h){
-  
-
-    
-    #pragma unroll  
+      
     for(curr_iteration = 0;
 	curr_iteration < max_iterations;
 	curr_iteration++){    
@@ -102,19 +99,22 @@ __global__ void mandelbrot_kernel(cudaSurfaceObject_t surface,
 
       x_avg /= (double)curr_iteration;
       y_avg /= (double)curr_iteration;
-      angle = abs((y_avg * y_avg)/(x_avg * x_avg));
+
+      angle = abs(y_avg/x_avg);
       if(angle >= 1.0f){
-	angle = abs((x_avg * x_avg)/(y_avg * y_avg));
+	angle = abs(x_avg/y_avg);
       }
       sat = 1.0f;
     }
+    __syncthreads();
+
     
     generate_color(curr_pixel,
 		   angle,
 		   sat,
 		   1.0f);
     
-
+    __syncthreads();
     float4 data = make_float4(curr_pixel[0],
 			      curr_pixel[1],
 			      curr_pixel[2],
@@ -123,7 +123,6 @@ __global__ void mandelbrot_kernel(cudaSurfaceObject_t surface,
     surf2Dwrite(data, surface, x_idx * sizeof(float4), y_idx);
 
   }
-
 }
 
 __global__ void burning_ship_kernel(cudaSurfaceObject_t surface,
@@ -137,18 +136,21 @@ __global__ void burning_ship_kernel(cudaSurfaceObject_t surface,
 
   double x_pos = world_x + (world_width/(double)w) * x_idx;
   double y_pos = world_y + (world_height/(double)h) * y_idx;
+
+  double x_temp;
+  double x = 0.0;
+  double y = 0.0;
+  double xx = x * x;
+  double yy = y * y;
     
+  uint32_t curr_iteration;
+
+  double x_avg = 0.0f;
+  double y_avg = 0.0f;
+
   if(x_idx < w && y_idx < h){
   
 
-    double x_temp;
-    double x = 0.0;
-    double y = 0.0;
-    double xx = x * x;
-    double yy = y * y;
-    
-    uint32_t curr_iteration;
-    #pragma unroll  
     for(curr_iteration = 0;
 	curr_iteration < max_iterations;
 	curr_iteration++){    
@@ -160,6 +162,9 @@ __global__ void burning_ship_kernel(cudaSurfaceObject_t surface,
     
       xx = x * x;
       yy = y * y;
+
+      x_avg += x;
+      y_avg += y;
     }
     __syncthreads();
 
@@ -171,19 +176,25 @@ __global__ void burning_ship_kernel(cudaSurfaceObject_t surface,
       angle = ((float)curr_iteration)/((float)max_iterations);
       sat = 2.0f/sqrtf(xx + yy);
     }else{
-      angle = abs((yy/xx));
+      x_avg /= (double)curr_iteration;
+      y_avg /= (double)curr_iteration;
+
+      angle = abs(y_avg/x_avg);
       if(angle >= 1.0f){
-	angle = abs((xx/yy));
+	angle = abs(x_avg/y_avg);
       }
       sat = 1.0f;
-      angle = 0.0f;
     }
     
+    __syncthreads();
+
     generate_color(curr_pixel,
 		   angle,
 		   sat,
 		   1.0f);
     
+
+    __syncthreads();
 
     float4 data = make_float4(curr_pixel[0],
 			      curr_pixel[1],
@@ -246,20 +257,25 @@ __global__ void julia_set_kernel(cudaSurfaceObject_t surface,
       sat = 2.0f/sqrtf(xx + yy);
     }else{
 
+
       x_avg /= (double)curr_iteration;
       y_avg /= (double)curr_iteration;
-      angle = abs((y_avg * y_avg)/(x_avg * x_avg));
+
+      angle = abs(y_avg/x_avg);
       if(angle >= 1.0f){
-	angle = abs((x_avg * x_avg)/(y_avg * y_avg));
+	angle = abs(x_avg/y_avg);
       }
       sat = 1.0f;
     }
+
+    __syncthreads();
     
     generate_color(curr_pixel,
 		   angle,
 		   sat,
 		   1.0f);
-    
+
+    __syncthreads();
 
     float4 data = make_float4(curr_pixel[0],
 			      curr_pixel[1],
