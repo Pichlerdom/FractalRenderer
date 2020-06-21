@@ -24,7 +24,7 @@
 #define WINDOW_WIDTH 1080
 #define WINDOW_HEIGHT 1080 
 
-#define MS_PER_FRAME 16
+//#define MS_PER_FRAME 16
 
 #define BYTES_PER_PIXEL 4
 

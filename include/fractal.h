@@ -54,6 +54,11 @@ public:
   double last_frame_time = 0;
 private:
 
+  struct Texture_Container{
+    struct cudaGraphicsResource * cuda;
+    GLuint gl;
+  };
+  
   void create_opengl_buffers();
 
   void cuda_pass();
@@ -63,10 +68,9 @@ private:
   GLuint vbo[2];
   GLuint ibo;
   
-  GLuint textures[2];
+  struct Texture_Container textures[2];
   GLuint texture_sampler;
 
-  struct cudaGraphicsResource * cuda_texture;
   cudaSurfaceObject_t surface;
   cudaEvent_t cuda_event;
   

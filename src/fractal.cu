@@ -26,6 +26,10 @@ CudaFractalGenerator::CudaFractalGenerator(uint32_t w, uint32_t h){
 }
 
 CudaFractalGenerator::~CudaFractalGenerator(){
+
+  auto e = cudaGraphicsUnregisterResource(textures[TEXTURE_FRONT].cuda);
+  e = cudaGraphicsUnregisterResource(textures[TEXTURE_BACK].cuda);
+
   glDisableVertexAttribArray(vertex_array);
   glDeleteBuffers(2,vbo);
   glDeleteVertexArrays(1,&vertex_array);  
@@ -44,7 +48,7 @@ void CudaFractalGenerator::render(){
   glBindBuffer(GL_ELEMENT_ARRAY_BUFFER,ibo);
  
   glActiveTexture(GL_TEXTURE0);
-  glBindTexture(GL_TEXTURE_2D, textures[TEXTURE_FRONT]);
+  glBindTexture(GL_TEXTURE_2D, textures[TEXTURE_FRONT].gl);
 
   glDrawElements(GL_TRIANGLES, 2 * 3, GL_UNSIGNED_SHORT, (void*)0);
 
@@ -78,11 +82,10 @@ void CudaFractalGenerator::cuda_pass(){
     
     e = cudaDestroySurfaceObject(surface);
     
-    e = cudaGraphicsUnmapResources(1, &cuda_texture, 0);
+    e = cudaGraphicsUnmapResources(1, &textures[TEXTURE_BACK].cuda, 0);
     
-    e = cudaGraphicsUnregisterResource(cuda_texture);
 
-    GLuint temp = textures[TEXTURE_FRONT];
+    struct Texture_Container temp = textures[TEXTURE_FRONT];
     textures[TEXTURE_FRONT] = textures[TEXTURE_BACK];
     textures[TEXTURE_BACK] = temp;
     working_on_texture = false;
@@ -101,13 +104,10 @@ void CudaFractalGenerator::cuda_pass(){
     m_new_world_y = m_world_y;
     timer->tick();
 
-    auto e = cudaGraphicsGLRegisterImage(&cuda_texture, textures[TEXTURE_BACK],
-				       GL_TEXTURE_2D,
-				       cudaGraphicsRegisterFlagsSurfaceLoadStore);  
-    e = cudaGraphicsMapResources(1, &cuda_texture, 0);
+    auto e = cudaGraphicsMapResources(1, &textures[TEXTURE_BACK].cuda, 0);
   
     cudaArray_t texture_array;
-    e = cudaGraphicsSubResourceGetMappedArray(&texture_array, cuda_texture, 0, 0);
+    e = cudaGraphicsSubResourceGetMappedArray(&texture_array, textures[TEXTURE_BACK].cuda, 0, 0);
 
     struct cudaResourceDesc desc;
     memset(&desc, 0, sizeof(struct cudaResourceDesc));
@@ -189,8 +189,8 @@ void CudaFractalGenerator::create_opengl_buffers(){
 
   //Texture
     
-  glGenTextures(2, textures);
-  glBindTexture(GL_TEXTURE_2D, textures[TEXTURE_FRONT]);
+  glGenTextures(1, &textures[TEXTURE_FRONT].gl);
+  glBindTexture(GL_TEXTURE_2D, textures[TEXTURE_FRONT].gl);
 
   glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
   glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
@@ -200,8 +200,15 @@ void CudaFractalGenerator::create_opengl_buffers(){
   glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA32F,
 	       m_w, m_h, 0, GL_RGBA,
 	       GL_FLOAT, nullptr);
+
+  auto e = cudaGraphicsGLRegisterImage(&textures[TEXTURE_FRONT].cuda,
+				       textures[TEXTURE_FRONT].gl,
+				       GL_TEXTURE_2D,
+				       cudaGraphicsRegisterFlagsSurfaceLoadStore);  
   
-  glBindTexture(GL_TEXTURE_2D, textures[TEXTURE_BACK]);
+  
+  glGenTextures(1, &textures[TEXTURE_BACK].gl);
+  glBindTexture(GL_TEXTURE_2D, textures[TEXTURE_BACK].gl);
 
   glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
   glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
@@ -212,7 +219,16 @@ void CudaFractalGenerator::create_opengl_buffers(){
 	       m_w, m_h, 0, GL_RGBA,
 	       GL_FLOAT, nullptr);
 
+  e = cudaGraphicsGLRegisterImage(&textures[TEXTURE_BACK].cuda,
+				  textures[TEXTURE_BACK].gl,
+				  GL_TEXTURE_2D,
+				  cudaGraphicsRegisterFlagsSurfaceLoadStore);  
+    
+  
   texture_sampler = 0;
+  
+
+  
   //Indices
   glGenBuffers(1,&ibo);
   glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ibo);
